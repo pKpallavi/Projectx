@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -42,38 +43,55 @@ Each Exam Level carries a different set of questions.
 Answer all the questions and then press Submit button to see your test score.
 <br>
 </p>
-<form action="$_SERVER["PHP_SELF"]">
-  select exam:
-	<select name="exam_options">
-  		<option value="Jenkins">Jenkins Exam</option>
-  		<option value="AWS">AWS Exam</option>
-  		<option value="Hadoop">Hadoop exam</option>
-  		<option value="QA">QA exam</option>
-	</select> 
-	<br><br>
-  <input type="submit" value="Submit">
-</form>
+<?php
+	$servername = "localhost";
+	$username = "root";
+	$password = "";
+	$dbname = "test_db";
+
+	$conn = new mysqli($servername, $username, $password, $dbname);
+	if($conn->connect_error) {
+		die("Connection failed: ".$conn->connect_error);
+	}
+	echo "Connected successfully";
+
+	$sql = "Select t_id, t_title from test_db.exam_topic";
+	$result = $conn->query($sql);
+	if ($result->num_rows > 0) {
+		echo '<form action="'. $_SERVER["PHP_SELF"]. '" method="POST">';
+  		echo 'select exam:';
+		echo '<select name="exam_options">';
+			while($row = $result->fetch_assoc())
+			{
+  				echo '<option value="' .$row["t_id"]. '">' .$row["t_title"]. '</option>';
+			}
+  		echo'</select>';
+		echo'<br><br>';
+  		echo '<input type="submit" value="Submit">';
+		echo '</form>';
+	}
+?>
 
 <?php
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "test_db";
+if($_SERVER["REQUEST_METHOD"] == "POST"){
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-if($conn->connect_error) {
-	die("Connection failed: ".$conn->connect_error);
+	$sql = "Select etl_id from test_db.exam_topic_level where t_id=" .$_POST["exam_options"];
+	$result = $conn->query($sql);
+	if ($result->num_rows > 0) {
+		$row1 = $result->fetch_assoc();
+		$sql = "Select q_id from test_db.exam_level_question where etl_id = ". $row1["etl_id"];
+		$exam_l_q = $conn->query($sql);
+		while($row2 = $exam_l_q->fetch_assoc()) {
+        		$sql = "Select q_title, q_active from test_db.exam_question where q_id = '". $row2["q_id"]. "' and q_active = 'Y'";
+			echo $sql;
+			$exam_q = $conn->query($sql);
+			while($row3 = $exam_q->fetch_assoc()) {
+				echo 'id: ' . $row2["q_id"]. ' - : ' . $row3["q_title"]. ' ' . $row3["q_active"]. '<br>';
+			}
+    		}
+	}
 }
-echo "Connected successfully";
-$sql = "Select * from test_db.exam_question where q_id LIKE '%JEN%'";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "Select query executed successfully";
-} else {
-    echo "Error creating database: " . $conn->connect_error;
-}
-
-$conn->close();
+$conn->close(); 
 ?>
 
 </div> 
